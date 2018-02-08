@@ -8,6 +8,7 @@ else
 
   echo "Installing all required python packages"
   pip install --upgrade pip
-  pip install numpy matplotlib jupyter tqdm ipdb
+  pip install numpy matplotlib jupyter tqdm ipdb h5py
   pip install --upgrade https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.5.0-py3-none-any.whl
+  pip install keras
 fi
