@@ -16,7 +16,7 @@ class Board():
     def add_move(self, x, y, player=0):
         """Records a new move at position x,y for player."""
 
-        if self.moves_by[player][x, y] != 0:
+        if self.moves_by[player][-1][x, y] != 0:
             raise UserWarning("Trying to add a move that has already been played by player {} (x={} y={}".format(player, x, y))
 
         new_state = np.copy(self.moves_by[player][-1])
