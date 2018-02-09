@@ -29,7 +29,7 @@ class Board(object):
     def get_prev_moves(self, n=1, player=0):
         """Returns numpy array of last t moves of player.
 
-        :param n: How many most recent moves for the given player should be returned. If the player haven't played that many moves, empty board will be returned.
+        :param n: How many most recent moves for the given player should be returned. If the player haven't played that many moves, the return array will be padded with a zeroed out (empty) board.
         :returns: numpy array of shape (t, self.dimensions[0], self.dimensions[0]) where the
                   last element is the most recent move.
         """
@@ -39,14 +39,21 @@ class Board(object):
             return np.vstack((blanks, self.moves_by[player]))
         return np.asarray(self.moves_by[player][-n:])
 
-    def get_features(self, n=1):
+    def get_features(self, n=1, player=0):
         """Compiles an array of feature planes used as input into the NN.
 
         :param n: How many most recent pairs of moves should be returned
-        :returns: numpy array of t*2 + 1 feature planes [X-1, Y-1, X-2, Y-2, ..., X-t, Y-t, C] where X-1 is
-                  the last move that was played, and Y-1 was last move played by the other player.
+        :returns: numpy array of n*2 + 1 feature planes [X-1, Y-1, X-2, Y-2, ..., X-n, Y-n, C] where X-1 is
+                  the last move that was played by player, and Y-1 was last move played by the other player. C is a mask: plane filled with 0 or 1 depending on the player's colour.
         """
-        raise NotImplementedError
+        p_features = self.get_prev_moves(n, player)
+        otherp_features = self.get_prev_moves(n, 1 - player)
+        features = []
+        for i in range(p_features.shape[0] - 1, -1, -1):
+            features.append(p_features[i])
+            features.append(otherp_features[i])
+        features.append(self.get_player_board(player))
+        return np.asarray(features)
 
     def get_player_board(self, player=0):
         """Returns a boolean 2D array of board shape"""
