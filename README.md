@@ -7,5 +7,8 @@
 ## Installing on MacOS
  Run ```./setup.sh ``` in the directory of your project. This should create a virtual environment and sort out all necessary dependencies.
 
-## Running 
-```source venv/bin/activate ```
+## Running
+ Activate the virtual environment
+ ```source venv/bin/activate ```
+ Run unit tests
+ ``` python unit_tests.py ```
