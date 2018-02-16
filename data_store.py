@@ -10,11 +10,12 @@ class SelfPlayHistory(object):
 
     def __init__(self, n_data_to_store=10**4, batch_size=100, board_dimensions=(15, 15), n_moves_in_state=3):
         self.batch_size = batch_size
+        self.board_dimensions = board_dimensions
         self.capacity = n_data_to_store
         self.cursor = 0
         self.n_data = 0
         self.board_states = np.zeros(
-            (n_data_to_store, n_moves_in_state, board_dimensions[0], board_dimensions[1]), dtype=bool)
+            (n_data_to_store, board_dimensions[0], board_dimensions[1], n_moves_in_state), dtype=bool)
         self.pis = np.zeros((n_data_to_store, board_dimensions[0], board_dimensions[1]))
         self.zs = np.zeros((n_data_to_store))
 
@@ -48,10 +49,12 @@ class SelfPlayHistory(object):
         TODO: should we skew this towards newest moves?
         """
         indices = np.random.randint(0, self.n_data, self.batch_size)
-        return (self.board_states[indices], {'out_prob': self.pis[indices], 'out_z': self.zs[indices]})
+        return (self.board_states[indices], {'policy_out': self.pis[indices], 'value_out': self.zs[indices]})
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return self.read_batch()
+    def get_status(self):
+        return {'cursor': self.cursor,
+                'n_data': self.n_data,
+                'capacity': self.capacity,
+                'batch_size': self.batch_size,
+                'board_dimensions': self.board_dimensions
+                }

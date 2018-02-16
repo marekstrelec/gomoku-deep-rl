@@ -13,7 +13,7 @@ class TestDataStore(unittest.TestCase):
             n_data_to_store=self.n_data_to_store, batch_size=self.batch_size, board_dimensions=self.dims)
 
         def gen_dummy_data(n_dummy_data=10):
-            dummy_board_states = np.random.randint(0, 2, (n_dummy_data, 3, *self.dims)) != 0
+            dummy_board_states = np.random.randint(0, 2, (n_dummy_data, *self.dims, 3)) != 0
             dummy_move_probabilities = np.random.rand(n_dummy_data, *self.dims)
             dummy_values = np.random.rand(n_dummy_data)
             return dummy_board_states, dummy_move_probabilities, dummy_values
@@ -90,10 +90,6 @@ class TestDataStore(unittest.TestCase):
 
         for i in range(0, 10):
             self.assertFalse(np.all([a_batch[0] == self.data_store.read_batch()[0]]))
-
-    def test_is_generator(self):
-        self.assertTrue(hasattr(self.data_store, '__iter__'))
-        self.assertTrue(hasattr(self.data_store, '__next__'))
 
 
 if __name__ == '__main__':
