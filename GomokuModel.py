@@ -1,3 +1,6 @@
+import os
+
+import keras
 from keras.layers import (BatchNormalization, Conv2D, Dense, Flatten, Input,
                           LeakyReLU)
 from keras.models import Model
@@ -6,8 +9,13 @@ from keras.regularizers import l2
 
 
 class GomokuModel():
-    def __init__(self, dimensions=(19, 19), t=1):
+    def __init__(self, dimensions=(19, 19), t=1, default_file_path='latest_model', load=False):
         self.dimensions = dimensions
+        self.default_file_path = default_file_path
+
+        if load:
+            self.load()
+            return
 
         L2reg = l2(1e-4)
 
@@ -67,3 +75,12 @@ class GomokuModel():
     def train(self, generator, steps_per_epoch):
         self.model.fit_generator(generator, steps_per_epoch=steps_per_epoch,
                                  epochs=1, verbose=1, shuffle=False)
+
+    def save(self):
+        if os.path.isfile(self.default_file_path):
+            os.rename(self.default_file_path, 'previous_model')
+
+        self.model.save(self.default_file_path)
+
+    def load(self, file_path=None):
+        self.model = keras.models.load_model(file_path if file_path else self.default_file_path)
