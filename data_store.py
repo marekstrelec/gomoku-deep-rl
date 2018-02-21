@@ -8,7 +8,7 @@ class SelfPlayHistory(object):
     An instance of this class can be passed as a generator, as it contains the __next__() and __iter__() methods.
     """
 
-    def __init__(self, n_data_to_store=10**4, batch_size=100, board_dimensions=(15, 15), n_moves_in_state=3):
+    def __init__(self, n_data_to_store=10**4, batch_size=100, board_dimensions=(19, 19), n_moves_in_state=3):
         self.batch_size = batch_size
         self.board_dimensions = board_dimensions
         self.capacity = n_data_to_store
@@ -49,7 +49,8 @@ class SelfPlayHistory(object):
         TODO: should we skew this towards newest moves?
         """
         indices = np.random.randint(0, self.n_data, self.batch_size)
-        return (self.board_states[indices], {'policy_out': self.pis[indices], 'value_out': self.zs[indices]})
+        flat_policy = self.pis[indices].reshape(indices.shape[0], -1)
+        return (self.board_states[indices], {'policy_out': flat_policy, 'value_out': self.zs[indices]})
 
     def get_status(self):
         return {'cursor': self.cursor,
