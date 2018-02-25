@@ -1,10 +1,64 @@
 import unittest
 
 import numpy as np
+
+from Board import Board, IllegalMove
 from data_store import SelfPlayHistory
 
 
+class TestBoard(unittest.TestCase):
+
+    def setUp(self):
+        self.board = Board((15, 15))
+
+    def test_add0(self):
+        self.assertTrue(self.board.moves_by[0][-1][10][10] == 0)
+        self.assertTrue(self.board.moves_by[0][-1][11][11] == 0)
+        self.assertTrue(self.board.moves_by[0][-1][12][12] == 0)
+        self.board.add_move(0, 10, 10)
+        self.assertTrue(self.board.moves_by[0][-1][10][10] == 1)
+        self.assertTrue(self.board.moves_by[1][-1][10][10] == 0)
+        self.board.add_move(1, 11, 11)
+        self.assertTrue(self.board.moves_by[0][-1][11][11] == 0)
+        self.assertTrue(self.board.moves_by[1][-1][11][11] == 1)
+        self.board.add_move(0, 12, 12)
+        self.assertTrue(self.board.moves_by[0][-1][12][12] == 1)
+        self.assertTrue(self.board.moves_by[1][-1][12][12] == 0)
+
+    def test_add_illegal_inside(self):
+        self.assertTrue(self.board.moves_by[0][-1][10][10] == 0)
+        self.board.add_move(0, 10, 10)
+
+        with self.assertRaises(IllegalMove):
+            self.board.add_move(0, 10, 10)
+
+        with self.assertRaises(IllegalMove):
+            self.board.add_move(1, 10, 10)
+
+    def test_add_illegal_outside(self):
+        self.board.add_move(0, 0, 0)
+
+        with self.assertRaises(IllegalMove):
+            self.board.add_move(0, self.board.dimensions[0], self.board.dimensions[1])
+
+        with self.assertRaises(IllegalMove):
+            self.board.add_move(0, 1, self.board.dimensions[1])
+
+        with self.assertRaises(IllegalMove):
+            self.board.add_move(1, self.board.dimensions[0] + 10, self.board.dimensions[1] + 10)
+
+        with self.assertRaises(IllegalMove):
+            self.board.add_move(1, 1, self.board.dimensions[1] + 10)
+
+        with self.assertRaises(IllegalMove):
+            self.board.add_move(0, -1, 3)
+
+        with self.assertRaises(IllegalMove):
+            self.board.add_move(1, 3, -10)
+
+
 class TestDataStore(unittest.TestCase):
+
     def setUp(self):
         self.dims = (15, 15)
         self.batch_size = 8
