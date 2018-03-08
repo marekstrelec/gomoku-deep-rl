@@ -1,4 +1,5 @@
 
+import copy
 import math
 
 import numpy as np
@@ -13,12 +14,32 @@ class MCTS(object):
         self.model = model
         self.player_positions = player_positions
         self.temperature = temperature
-        self.root_node = Node(None, player, None, 0)
+        self.root_node = self.init_root(player_positions, player)
+
+    def init_root(self, current_positions, player):
+
+        def build_features(current_positions, player):
+            features = np.zeros((1, 3, *self.board.dimensions))
+            X = copy.deepcopy(current_positions[player])[0]
+            Y = copy.deepcopy(current_positions[player == 0])[0]
+            C = self.get_player_mask(player)
+
+            X = X.reshape(1, *X.shape)
+            Y = Y.reshape(1, *Y.shape)
+            C = C.reshape(1, *C.shape)
+            features[0] = np.vstack((X, Y, C))
+
+            return features
+
+        features = build_features(current_positions, player)
+        ps, vs = self.model.model.predict(features)
+
+        return Node(None, player, None, ps[0])
 
     def compute_ucb1(self, node, c_ucb1=1 / (2 ** 1 / 2)):
-        '''UCB1 algorithm
+        '''PUCT algorithm
 
-        Performs the UCB1 bandit learning algorith.
+        Performs the PUCT bandit learning algorith.
 
         Addresses the exploration-exploitation dilemma in MCTS:
         every time a node (action) is to be selected within the existing tree, the choice
@@ -33,13 +54,15 @@ class MCTS(object):
         :param Node node: the current child node
         :return: reward guess
         :rtype: int
-        :raises ZeroDivisionError: if UCB1 computed on unvisited nodes
+        :raises ZeroDivisionError: if PUCT computed on unvisited nodes
         '''
 
         if node.N == 0:
-            raise ZeroDivisionError("MCTS cannot compute UCB1 on unvisited nodes!")
+            raise ZeroDivisionError("MCTS cannot compute PUCT on unvisited nodes!")
 
-        U = 2 * c_ucb1 * math.sqrt((2 * math.log(node.parent.N)) / node.N)
+        siblings = node.parents.get_children()
+        U = c_ucb1 * node.parent.P[node.move[0]][node.move[1]] * \
+            math.sqrt(sum([n.N for n in siblings])) / (1 + node.N)
         return self.Q + U
 
     def selection(self):
@@ -77,7 +100,8 @@ class MCTS(object):
         current_positions = self.build_positions(selected_node)
         possible_actions = self.get_all_possible_actions(current_positions)
         features = self.build_features(current_positions, possible_actions, selected_node.player)
-        ps, vs = self.model.predict(features)
+        ps, vs = self.model.model.predict(features)
+        # return ps, vs
         assert len(possible_actions) == len(ps) == len(vs)
 
         # add actions
@@ -86,7 +110,9 @@ class MCTS(object):
                             0, possible_actions[idx], ps[idx])
             selected_node.add_child(new_node)
 
-        return vs
+            self.backpropagate(new_node, vs[idx])
+
+        # return vs
 
     def backpropagate(self, node, value):
         '''Backpropagation
@@ -98,9 +124,9 @@ class MCTS(object):
         '''
 
         while not node.is_root():
-            self.N += 1
-            self.W += value
-            self.Q = self.W / self.N
+            node.N += 1
+            node.W += value
+            node.Q = node.W / node.N
             node = node.parent
 
     def simulation(self):
@@ -118,23 +144,20 @@ class MCTS(object):
 
         root_children = self.root_node.get_children()
 
-        # exponentiate
-        pi_exp = [(node.N ** (1 / self.temperature), idx)
-                  for idx, node in enumerate(root_children)]
-
         # normalize
-        pi_denom = sum(pi_exp)
-        pi_normalised = [n / pi_denom for n in pi_exp]
+        pi_exp = np.asarray([node.N for node in root_children])
+        pi_exp = pi_exp ** (1 / self.temperature)
+        pi_normalised = pi_exp / sum(pi_exp)
 
         # make the best move a root node
-        best_move = root_children[max(pi_normalised)[1]]
+        best_move = root_children[pi_normalised.argmax()]
         self.root_node = best_move
         best_move.parent = None
 
         return best_move
 
     def build_positions(self, node):
-        '''Build a mosition from a node in the search tree
+        '''Build a position from a node in the search tree
 
         Player positions for the node are obtained by traversing the search tree backwards to
         the root and mergeing all encountered moves with the current player positions.
@@ -162,7 +185,7 @@ class MCTS(object):
         """
 
         assert len(positions) == 2
-        merged = np.logical_or(positions[0], positions[1])
+        merged = np.logical_or(positions[0][0], positions[1][0])
         r, c = np.where(merged == 0)
         return list(zip(r, c))
 
@@ -175,13 +198,17 @@ class MCTS(object):
         :rtype: numpy.ndarray
         """
 
-        features = []
-        for a in possible_actions:
-            X = current_positions[player]
+        features = np.zeros((len(possible_actions), 3, *self.board.dimensions))
+        for idx, a in enumerate(possible_actions):
+            X = copy.deepcopy(current_positions[player])[0]
             X[a[0]][a[1]] = 1
-            Y = current_positions[player == 0]
-            C = self.board.get_player_mask(player)
-            features.append(np.asarray([X, Y, C]))
+            Y = copy.deepcopy(current_positions[player == 0])[0]
+            C = self.get_player_mask(player)
+
+            X = X.reshape(1, *X.shape)
+            Y = Y.reshape(1, *Y.shape)
+            C = C.reshape(1, *C.shape)
+            features[idx] = np.vstack((X, Y, C))
 
         return np.asarray(features)
 
@@ -195,4 +222,4 @@ class MCTS(object):
         :rtype: numpy.ndarray
         """
 
-        return np.logical_or(np.zeros(self.dimensions, dtype=bool), player)
+        return np.logical_or(np.zeros(self.board.dimensions, dtype=bool), player)

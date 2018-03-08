@@ -9,7 +9,7 @@ from keras.regularizers import l2
 
 
 class GomokuModel():
-    def __init__(self, dimensions=(19, 19), t=1, default_file_path='latest_model', load=False):
+    def __init__(self, dimensions=(15, 15), t=1, default_file_path='latest_model', load=False):
         self.dimensions = dimensions
         self.default_file_path = default_file_path
 
@@ -26,7 +26,7 @@ class GomokuModel():
                           kernel_regularizer=L2reg,
                           padding='same')(input_layer)
 
-        inputs = Input(shape=(dimensions[0], dimensions[1], 2 * t + 1))
+        inputs = Input(shape=(2 * t + 1, dimensions[0], dimensions[1]))
 
         # Convolutional block
         conv_block = add_conv_layer(inputs)

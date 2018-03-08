@@ -8,7 +8,7 @@ class SelfPlayHistory(object):
     An instance of this class can be passed as a generator, as it contains the __next__() and __iter__() methods.
     """
 
-    def __init__(self, n_data_to_store=10**4, batch_size=100, board_dimensions=(19, 19), n_moves_in_state=3):
+    def __init__(self, n_data_to_store=10**4, batch_size=100, board_dimensions=(15, 15), n_moves_in_state=3):
         self.batch_size = batch_size
         self.board_dimensions = board_dimensions
         self.capacity = n_data_to_store

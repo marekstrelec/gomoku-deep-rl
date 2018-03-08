@@ -1,4 +1,7 @@
 
+import numpy as np
+
+
 class Node(object):
 
     '''MCTS node
@@ -21,9 +24,10 @@ class Node(object):
     def __init__(self, parent, player, move, pa):
         assert isinstance(parent, Node) or parent is None
         assert player in [0, 1]
-        assert isinstance(move, tuple)
-        assert len(move) == 2
-        assert isinstance(pa, float)
+        if parent is not None:
+            assert isinstance(move, tuple)
+            assert len(move) == 2
+            assert isinstance(pa, np.ndarray)
 
         self.parent = parent
         self.children = None
